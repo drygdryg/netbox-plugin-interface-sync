@@ -1,0 +1,12 @@
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <strong>Number of interfaces</strong>
+    </div>
+    <div class="panel-body">
+        Total interfaces: {{ interfaces|length }}<br>
+        {% if config.exclude_virtual_interfaces %}
+        Non-virtual interfaces: {{ real_interfaces|length }}<br>
+        {% endif %}
+        Interfaces in the corresponding device type: {{ interface_templates|length }}
+    </div>
+</div>
