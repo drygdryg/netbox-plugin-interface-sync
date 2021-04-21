@@ -72,14 +72,14 @@ class InterfaceComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
                 map(int, filter(lambda x: x.isdigit(), request.POST.getlist("remove_from_device")))
             )
 
+            # Remove selected interfaces from the device and count them
+            interfaces_deleted = Interface.objects.filter(id__in=remove_from_device).delete()[0]
+
             # Add selected interfaces to the device and count them
             add_to_device_interfaces = InterfaceTemplate.objects.filter(id__in=add_to_device)
             interfaces_created = len(Interface.objects.bulk_create([
                 Interface(device=device, name=i.name, type=i.type) for i in add_to_device_interfaces
             ]))
-
-            # Remove selected interfaces from the device and count them
-            interfaces_deleted = Interface.objects.filter(id__in=remove_from_device).delete()[0]
 
             # Getting and validating a list of interfaces to rename
             fix_name_interfaces = filter(lambda i: str(i.id) in request.POST.getlist("fix_name"), interfaces)
