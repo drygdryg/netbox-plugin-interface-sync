@@ -22,7 +22,7 @@ PLUGINS = [
 sudo systemctl restart netbox
 ```
 ## Использование
-Для того чтобы сравнить интерфейсы, откройте страницу нужного устройства и найдите кнопку "Compare device interfaces with device type interfaces" справа сверху:
+Для того чтобы сравнить интерфейсы, откройте страницу нужного устройства и найдите кнопку "Interface sync" справа сверху:
 ![Device page](docs/images/1_device_page.png)
 Отметьте требуемые действия напротив интерфейсов флажками и нажмите "Apply".
 ![Interface comparison](docs/images/2_interface_comparison.png)

@@ -23,7 +23,7 @@ Don't forget to restart NetBox:
 sudo systemctl restart netbox
 ```
 ## Usage
-To compare the interfaces, open the page of the desired device and find the "Compare device interfaces with device type interfaces" button":
+To compare the interfaces, open the page of the desired device and find the "Interface sync" button:
 ![Device page](docs/images/1_device_page.png)
 Mark the required actions with the checkboxes and click "Apply".
 ![Interface comparison](docs/images/2_interface_comparison.png)
