@@ -5,6 +5,7 @@ setup(
     version='0.1',
     description='Syncing interfaces with the interfaces from device type for NetBox devices',
     author='Victor Golovanenko',
+    author_email='drygdryg2014@yandex.com',
     license='GPL-3.0',
     install_requires=[],
     packages=["netbox_interface_sync"],
