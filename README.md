@@ -8,7 +8,11 @@ If your NetBox installation uses virtualenv, activate it like this:
 ```
 source /opt/netbox/venv/bin/activate
 ```
-Clone this repository, then go to the folder with it and install the plugin:
+Install the plugin from PyPI:
+```
+pip install netbox-interface-sync
+```
+or clone this repository, then go to the folder with it and install the plugin:
 ```
 pip install .
 ```
