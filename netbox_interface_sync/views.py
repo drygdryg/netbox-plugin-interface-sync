@@ -22,8 +22,9 @@ class InterfaceComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
             interfaces = list(filter(lambda i: not i.is_virtual, interfaces))
         interface_templates = InterfaceTemplate.objects.filter(device_type=device.device_type)
 
-        unified_interfaces = [UnifiedInterface(i.id, i.name, i.type) for i in interfaces]
-        unified_interface_templates = [UnifiedInterface(i.id, i.name, i.type, is_template=True) for i in interface_templates]
+        unified_interfaces = [UnifiedInterface(i.id, i.name, i.type, i.get_type_display()) for i in interfaces]
+        unified_interface_templates = [
+            UnifiedInterface(i.id, i.name, i.type, i.get_type_display(), is_template=True) for i in interface_templates]
 
         # List of interfaces and interface templates presented in the unified format
         overall_interfaces = list(set(unified_interface_templates + unified_interfaces))
@@ -84,12 +85,13 @@ class InterfaceComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
             # Getting and validating a list of interfaces to rename
             fix_name_interfaces = filter(lambda i: str(i.id) in request.POST.getlist("fix_name"), interfaces)
             # Casting interface templates into UnifiedInterface objects for proper comparison with interfaces for renaming
-            unified_interface_templates = [UnifiedInterface(i.id, i.name, i.type) for i in interface_templates]
+            unified_interface_templates = [
+                UnifiedInterface(i.id, i.name, i.type, i.get_type_display()) for i in interface_templates]
 
             # Rename selected interfaces
             interfaces_fixed = 0
             for interface in fix_name_interfaces:
-                unified_interface = UnifiedInterface(interface.id, interface.name, interface.type)
+                unified_interface = UnifiedInterface(interface.id, interface.name, interface.type, interface.get_type_display())
                 try:
                     # Try to extract an interface template with the corresponding name
                     corresponding_template = unified_interface_templates[unified_interface_templates.index(unified_interface)]

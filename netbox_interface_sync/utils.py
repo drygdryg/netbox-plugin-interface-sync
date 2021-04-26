@@ -23,6 +23,7 @@ class UnifiedInterface:
     id: int
     name: str
     type: str
+    type_display: str
     is_template: bool = False
 
     def __eq__(self, other):
