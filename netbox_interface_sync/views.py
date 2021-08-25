@@ -17,7 +17,7 @@ class InterfaceComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
 
     def get(self, request, device_id):
         device = get_object_or_404(Device.objects.filter(id=device_id))
-        interfaces = device.vc_interfaces
+        interfaces = device.vc_interfaces()
         if config["exclude_virtual_interfaces"]:
             interfaces = list(filter(lambda i: not i.is_virtual, interfaces))
         interface_templates = InterfaceTemplate.objects.filter(device_type=device.device_type)
@@ -58,7 +58,7 @@ class InterfaceComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
         form = InterfaceComparisonForm(request.POST)
         if form.is_valid():
             device = get_object_or_404(Device.objects.filter(id=device_id))
-            interfaces = device.vc_interfaces
+            interfaces = device.vc_interfaces()
             if config["exclude_virtual_interfaces"]:
                 interfaces = interfaces.exclude(type__in=["virtual", "lag"])
             interface_templates = InterfaceTemplate.objects.filter(device_type=device.device_type)

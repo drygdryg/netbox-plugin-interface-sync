@@ -1,17 +1,15 @@
-{% extends 'base.html' %}
+{% extends 'base/layout.html' %}
 
+{% block title %}{{ device }} - Interface comparison{% endblock %}
 {% block header %}
-<div class="row noprint">
-    <div class="col-sm-8 col-md-9">
+    <nav class="breadcrumb-container px-3" aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li><a href="{% url 'dcim:device_list' %}">Devices</a></li>
-            <li><a href="{% url 'dcim:device_list' %}?site={{ device.site.slug }}">{{ device.site }}</a></li>
-            <li><a href="{% url 'dcim:device' pk=device.id %}">{{ device }}</a></li>
-            <li>Interface comparison</li>
+            <li class="breadcrumb-item"><a href="{% url 'dcim:device_list' %}">Devices</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'dcim:device_list' %}?site={{ device.site.slug }}">{{ device.site }}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'dcim:device' pk=device.id %}">{{ device }}</a></li>
         </ol>
-    </div>
-</div>
-<h1>{% block title %}{{ device }} - Interface comparison{% endblock %}</h1>
+    </nav>
+    {{ block.super }}
 {% endblock %}
 
 {% block content %}
