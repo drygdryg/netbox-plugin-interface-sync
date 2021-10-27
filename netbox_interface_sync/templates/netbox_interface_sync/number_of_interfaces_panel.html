@@ -1,8 +1,6 @@
-<div class="panel panel-default">
-    <div class="panel-heading">
-        <strong>Number of interfaces</strong>
-    </div>
-    <div class="panel-body">
+<div class="card">
+    <h5 class="card-header">Number of interfaces</h5>
+    <div class="card-body">
         Total interfaces: {{ interfaces|length }}<br>
         {% if config.exclude_virtual_interfaces %}
         Non-virtual interfaces: {{ real_interfaces|length }}<br>
