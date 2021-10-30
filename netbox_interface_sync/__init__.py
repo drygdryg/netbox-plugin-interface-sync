@@ -5,7 +5,7 @@ class Config(PluginConfig):
     name = 'netbox_interface_sync'
     verbose_name = 'NetBox interface synchronization'
     description = 'Syncing interfaces with the interfaces from device type for NetBox devices'
-    version = '0.1.2'
+    version = '0.2.0'
     author = 'Victor Golovanenko'
     author_email = 'drygdryg2014@yandex.ru'
     default_settings = {
