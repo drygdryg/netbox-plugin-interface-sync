@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib import messages
 
 from .utils import natural_keys, get_components, post_components
-from .comparison import ComparisonPowerOutlet, UnifiedInterface
+from .comparison import PowerPortComparison, PowerOutletComparison, InterfaceComparison, ConsolePortComparison, ConsoleServerPortComparison, DeviceBayComparison
 from .forms import InterfaceComparisonForm
 
 config = settings.PLUGINS_CONFIG['netbox_interface_sync']
@@ -25,7 +25,11 @@ class InterfaceComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
             interfaces = list(filter(lambda i: not i.is_virtual, interfaces))
         interface_templates = InterfaceTemplate.objects.filter(device_type=device.device_type)
 
-        return get_components(request, device, interfaces, interface_templates)
+        unified_interfaces = [InterfaceComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), i.mgmt_only) for i in interfaces]
+        unified_interface_templates = [
+            InterfaceComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), i.mgmt_only, is_template=True) for i in interface_templates]
+
+        return get_components(request, device, interfaces, unified_interfaces, unified_interface_templates)
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
@@ -47,8 +51,12 @@ class PowerPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
         
         powerports = device.powerports.all()
         powerports_templates = PowerPortTemplate.objects.filter(device_type=device.device_type)
+        
+        unified_powerports = [PowerPortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), i.maximum_draw, i.allocated_draw) for i in powerports]
+        unified_powerport_templates = [
+            PowerPortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), i.maximum_draw, i.allocated_draw, is_template=True) for i in powerports_templates]
 
-        return get_components(request, device, powerports, powerports_templates)
+        return get_components(request, device, powerports, unified_powerports, unified_powerport_templates)
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
@@ -70,7 +78,11 @@ class ConsolePortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
         consoleports = device.consoleports.all()
         consoleports_templates = ConsolePortTemplate.objects.filter(device_type=device.device_type)
 
-        return get_components(request, device, consoleports, consoleports_templates)
+        unified_consoleports = [ConsolePortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display()) for i in consoleports]
+        unified_consoleport_templates = [
+            ConsolePortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), is_template=True) for i in consoleports_templates]
+
+        return get_components(request, device, consoleports, unified_consoleports, unified_consoleport_templates)
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
@@ -92,7 +104,11 @@ class ConsoleServerPortComparisonView(LoginRequiredMixin, PermissionRequiredMixi
         consoleserverports = device.consoleserverports.all()
         consoleserverports_templates = ConsoleServerPortTemplate.objects.filter(device_type=device.device_type)
 
-        return get_components(request, device, consoleserverports, consoleserverports_templates)
+        unified_consoleserverports = [ConsoleServerPortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display()) for i in consoleserverports]
+        unified_consoleserverport_templates = [
+            ConsoleServerPortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), is_template=True) for i in consoleserverports_templates]
+
+        return get_components(request, device, consoleserverports, unified_consoleserverports, unified_consoleserverport_templates)
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
@@ -114,38 +130,11 @@ class PowerOutletComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
         poweroutlets = device.poweroutlets.all()
         poweroutlets_templates = PowerOutletTemplate.objects.filter(device_type=device.device_type)
         
-        
-        unified_components = [ComparisonPowerOutlet(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPort.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg) for i in poweroutlets]
-        unified_component_templates = [
-            ComparisonPowerOutlet(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPortTemplate.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg, is_template=True) for i in poweroutlets_templates]
+        unified_poweroutlets = [PowerOutletComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPort.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg) for i in poweroutlets]
+        unified_poweroutlet_templates = [
+            PowerOutletComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPortTemplate.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg, is_template=True) for i in poweroutlets_templates]
 
-        # List of interfaces and interface templates presented in the unified format
-        overall_powers = list(set(unified_component_templates + unified_components))
-        overall_powers.sort(key=lambda o: natural_keys(o.name))
-
-        comparison_templates = []
-        comparison_interfaces = []
-        for i in overall_powers:
-            try:
-                comparison_templates.append(unified_component_templates[unified_component_templates.index(i)])
-            except ValueError:
-                comparison_templates.append(None)
-
-            try:
-                comparison_interfaces.append(unified_components[unified_components.index(i)])
-            except ValueError:
-                comparison_interfaces.append(None)
-
-        comparison_items = list(zip(comparison_templates, comparison_interfaces))
-        return render(
-            request, "netbox_interface_sync/interface_comparison.html",
-            {
-                "comparison_items": comparison_items,
-                "templates_count": len(unified_component_templates),
-                "interfaces_count": len(poweroutlets),
-                "device": device
-                }
-        )
+        return get_components(request, device, poweroutlets, unified_poweroutlets, unified_poweroutlet_templates)
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
@@ -234,12 +223,12 @@ class PowerOutletComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
 
             # Casting interface templates into UnifiedInterface objects for proper comparison with interfaces for renaming
             unified_component_templates = [
-                ComparisonPowerOutlet(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPortTemplate.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg, is_template=True) for i in poweroutlets_templates]
+                PowerOutletComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPortTemplate.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg, is_template=True) for i in poweroutlets_templates]
 
             # Rename selected interfaces
             fixed = 0
             for component in fix_name_components:
-                unified_component = [ComparisonPowerOutlet(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPort.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg) for i in poweroutlets]
+                unified_component = [PowerOutletComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPort.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg) for i in poweroutlets]
 
                 try:
                     # Try to extract an interface template with the corresponding name
@@ -318,8 +307,12 @@ class DeviceBayComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
         
         devicebays = device.devicebays.all()
         devicebays_templates = DeviceBayTemplate.objects.filter(device_type=device.device_type)
-
-        return get_components(request, device, devicebays, devicebays_templates)
+        
+        unified_devicebays = [DeviceBayComparison(i.id, i.name, i.label, i.description) for i in devicebays]
+        unified_devicebay_templates = [
+            DeviceBayComparison(i.id, i.name, i.label, i.description, is_template=True) for i in devicebays_templates]
+            
+        return get_components(request, device, devicebays, unified_devicebays, unified_devicebay_templates)
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
