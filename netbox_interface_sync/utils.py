@@ -2,7 +2,7 @@ import re
 from typing import Iterable
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .comparison import UnifiedInterface
+from django.core.exceptions import ObjectDoesNotExist
 
 
 def split(s):
@@ -20,18 +20,6 @@ def human_sorted(iterable: Iterable):
 
 
 def get_components(request, device, components, unified_components, unified_component_templates):
-    # try:
-    #     unified_components = [UnifiedInterface(i.id, i.name, i.type, i.get_type_display()) for i in components]
-    # except AttributeError:
-    #     unified_components = [UnifiedInterface(i.id, i.name) for i in components]
-
-    # try:
-    #     unified_component_templates = [
-    #         UnifiedInterface(i.id, i.name, i.type, i.get_type_display(), is_template=True) for i in component_templates]
-    # except AttributeError:
-    #     unified_component_templates = [
-    #         UnifiedInterface(i.id, i.name, is_template=True) for i in component_templates]
-
     # List of interfaces and interface templates presented in the unified format
     overall_powers = list(set(unified_component_templates + unified_components))
     overall_powers.sort(key=lambda o: natural_keys(o.name))
@@ -67,7 +55,7 @@ def get_components(request, device, components, unified_components, unified_comp
 
 
 def post_components(
-    request, device, components, component_templates, ObjectType, ObjectTemplateType
+    request, device, components, component_templates, ObjectType, ObjectTemplateType, unified_component, unified_component_templates
 ):
     # Manually validating interfaces and interface templates lists
     add_to_device = filter(
@@ -89,50 +77,38 @@ def post_components(
     add_to_device_component = ObjectTemplateType.objects.filter(id__in=add_to_device)
 
     bulk_create = []
+    updated = 0
     keys_to_avoid = ["id"]
 
     for i in add_to_device_component.values():
-        tmp = ObjectType()
-        tmp.device = device
+        to_create = False
+
+        try:
+            tmp = components.get(name=i["name"])
+        except ObjectDoesNotExist:
+            tmp = ObjectType()
+            tmp.device = device
+            to_create = True
+
         for k in i.keys():
             if k not in keys_to_avoid:
                 setattr(tmp, k, i[k])
-        bulk_create.append(tmp)
+
+        if to_create:
+            bulk_create.append(tmp)
+        else:
+            tmp.save()
+            updated += 1
 
     created = len(ObjectType.objects.bulk_create(bulk_create))
 
-    # Getting and validating a list of interfaces to rename
-    fix_name_components = filter(
-        lambda i: str(i.id) in request.POST.getlist("fix_name"), components
-    )
-    # Casting interface templates into UnifiedInterface objects for proper comparison with interfaces for renaming
-    try:
-        unified_component_templates = [
-            UnifiedInterface(i.id, i.name, i.type, i.get_type_display())
-            for i in component_templates
-        ]
-    except AttributeError:
-        unified_component_templates = [
-            UnifiedInterface(i.id, i.name) for i in component_templates
-        ]
-
     # Rename selected interfaces
     fixed = 0
-    for component in fix_name_components:
-        try:
-            unified_component = UnifiedInterface(
-                component.id,
-                component.name,
-                component.type,
-                component.get_type_display(),
-            )
-        except AttributeError:
-            unified_component = UnifiedInterface(component.id, component.name)
-
+    for component, component_comparison in unified_component:
         try:
             # Try to extract an interface template with the corresponding name
             corresponding_template = unified_component_templates[
-                unified_component_templates.index(unified_component)
+                unified_component_templates.index(component_comparison)
             ]
             component.name = corresponding_template.name
             component.save()
@@ -144,6 +120,8 @@ def post_components(
     message = []
     if created > 0:
         message.append(f"created {created} interfaces")
+    if updated > 0:
+        message.append(f"updated {updated} interfaces")
     if deleted > 0:
         message.append(f"deleted {deleted} interfaces")
     if fixed > 0:

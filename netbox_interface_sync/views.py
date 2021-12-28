@@ -39,8 +39,28 @@ class InterfaceComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
             if config["exclude_virtual_interfaces"]:
                 interfaces = interfaces.exclude(type__in=["virtual", "lag"])
             interface_templates = InterfaceTemplate.objects.filter(device_type=device.device_type)
+
+            # Getting and validating a list of interfaces to rename
+            fix_name_components = filter(
+                lambda i: str(i.id) in request.POST.getlist("fix_name"), interfaces
+            )
+
+            unified_interface_templates = [
+                InterfaceComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), i.mgmt_only, is_template=True) for i in interface_templates]
             
-            return post_components(request, device, interfaces, interface_templates, Interface, InterfaceTemplate)
+            unified_interfaces = []
+
+            for component in fix_name_components:
+                    unified_interfaces.append((component, InterfaceComparison(
+                        component.id,
+                        component.name,
+                        component.label,
+                        component.description,
+                        component.type,
+                        component.get_type_display(),
+                        component.mgmt_only)))
+            
+            return post_components(request, device, interfaces, interface_templates, Interface, InterfaceTemplate, unified_interfaces, unified_interface_templates)
 
 class PowerPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View):
     """Comparison of interfaces between a device and a device type and beautiful visualization"""
@@ -65,8 +85,29 @@ class PowerPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
 
             powerports = device.powerports.all()
             powerports_templates = PowerPortTemplate.objects.filter(device_type=device.device_type)
+
+            # Getting and validating a list of interfaces to rename
+            fix_name_components = filter(
+                lambda i: str(i.id) in request.POST.getlist("fix_name"), powerports
+            )
+
+            unified_powerport_templates = [
+                PowerPortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), i.maximum_draw, i.allocated_draw, is_template=True) for i in powerports_templates]
+
+            unified_powerports = []
+
+            for component in fix_name_components:
+                    unified_powerports.append((component, PowerPortComparison(
+                        component.id,
+                        component.name,
+                        component.label,
+                        component.description,
+                        component.type,
+                        component.get_type_display(),
+                        component.maximum_draw,
+                        component.allocated_draw)))
             
-            return post_components(request, device, powerports, powerports_templates, PowerPort, PowerPortTemplate)
+            return post_components(request, device, powerports, powerports_templates, PowerPort, PowerPortTemplate, unified_powerports, unified_powerport_templates)
 
 class ConsolePortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View):
     """Comparison of interfaces between a device and a device type and beautiful visualization"""
@@ -91,8 +132,27 @@ class ConsolePortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
 
             consoleports = device.consoleports.all()
             consoleports_templates = ConsolePortTemplate.objects.filter(device_type=device.device_type)
+
+            # Getting and validating a list of interfaces to rename
+            fix_name_components = filter(
+                lambda i: str(i.id) in request.POST.getlist("fix_name"), consoleports
+            )
+
+            unified_consoleport_templates = [
+                ConsolePortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), is_template=True) for i in consoleports_templates]
+
+            unified_consoleports = []
+
+            for component in fix_name_components:
+                    unified_consoleports.append((component, ConsolePortComparison(
+                        component.id,
+                        component.name,
+                        component.label,
+                        component.description,
+                        component.type,
+                        component.get_type_display())))
             
-            return post_components(request, device, consoleports, consoleports_templates, ConsolePort, ConsolePortTemplate)
+            return post_components(request, device, consoleports, consoleports_templates, ConsolePort, ConsolePortTemplate, unified_consoleports, unified_consoleport_templates)
 
 class ConsoleServerPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View):
     """Comparison of interfaces between a device and a device type and beautiful visualization"""
@@ -117,8 +177,27 @@ class ConsoleServerPortComparisonView(LoginRequiredMixin, PermissionRequiredMixi
 
             consoleserverports = device.consoleserverports.all()
             consoleserverports_templates = ConsoleServerPortTemplate.objects.filter(device_type=device.device_type)
+
+            # Getting and validating a list of interfaces to rename
+            fix_name_components = filter(
+                lambda i: str(i.id) in request.POST.getlist("fix_name"), consoleserverports
+            )
+
+            unified_consoleserverport_templates = [
+                ConsoleServerPortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), is_template=True) for i in consoleserverports_templates]
+
+            unified_consoleserverports = []
+
+            for component in fix_name_components:
+                    unified_consoleserverports.append((component, ConsoleServerPortComparison(
+                        component.id,
+                        component.name,
+                        component.label,
+                        component.description,
+                        component.type,
+                        component.get_type_display())))
             
-            return post_components(request, device, consoleserverports, consoleserverports_templates, ConsoleServerPort, ConsoleServerPortTemplate)
+            return post_components(request, device, consoleserverports, consoleserverports_templates, ConsoleServerPort, ConsoleServerPortTemplate, unified_consoleserverports, unified_consoleserverport_templates)
 
 class PowerOutletComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View):
     """Comparison of interfaces between a device and a device type and beautiful visualization"""
@@ -141,118 +220,118 @@ class PowerOutletComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
         if form.is_valid():
             device = get_object_or_404(Device.objects.filter(id=device_id))
 
-        poweroutlets = device.poweroutlets.all()
-        poweroutlets_templates = PowerOutletTemplate.objects.filter(device_type=device.device_type)
+            poweroutlets = device.poweroutlets.all()
+            poweroutlets_templates = PowerOutletTemplate.objects.filter(device_type=device.device_type)
 
-        # Generating result message
-        message = []
-        created = 0
-        updated = 0
-        fixed = 0
-        
-        remove_from_device = filter(
-            lambda i: i in poweroutlets.values_list("id", flat=True),
-            map(int, filter(lambda x: x.isdigit(), request.POST.getlist("remove_from_device")))
-        )
-
-        # Remove selected interfaces from the device and count them
-        deleted = PowerOutlet.objects.filter(id__in=remove_from_device).delete()[0]
-
-        # Get device power ports to check dependency between power outlets
-        device_pp = PowerPort.objects.filter(device_id=device.id)
-
-        matching = {}
-        mismatch = False
-        for i in poweroutlets_templates:
-            found = False
-            if i.power_port_id is not None:
-                ppt = PowerPortTemplate.objects.get(id=i.power_port_id)
-                for pp in device_pp:
-                    if pp.name == ppt.name:
-                        # Save matching to add the correct power port later
-                        matching[i.id] = pp.id
-                        found = True
-                
-                # If at least on power port is found there is a dependency
-                # Better not to sync at all
-                if not found:
-                    mismatch = True
-                    break
-        
-        if not mismatch:
-            # Manually validating interfaces and interface templates lists                
-            add_to_device = filter(
-                lambda i: i in poweroutlets_templates.values_list("id", flat=True),
-                map(int, filter(lambda x: x.isdigit(), request.POST.getlist("add_to_device")))
+            # Generating result message
+            message = []
+            created = 0
+            updated = 0
+            fixed = 0
+            
+            remove_from_device = filter(
+                lambda i: i in poweroutlets.values_list("id", flat=True),
+                map(int, filter(lambda x: x.isdigit(), request.POST.getlist("remove_from_device")))
             )
 
-            # Add selected interfaces to the device and count them
-            add_to_device_component = PowerOutletTemplate.objects.filter(id__in=add_to_device)
+            # Remove selected interfaces from the device and count them
+            deleted = PowerOutlet.objects.filter(id__in=remove_from_device).delete()[0]
 
-            bulk_create = []
-            updated = 0
-            keys_to_avoid = ["id"]
+            # Get device power ports to check dependency between power outlets
+            device_pp = PowerPort.objects.filter(device_id=device.id)
 
-            for i in add_to_device_component.values():
-                to_create = False
+            matching = {}
+            mismatch = False
+            for i in poweroutlets_templates:
+                found = False
+                if i.power_port_id is not None:
+                    ppt = PowerPortTemplate.objects.get(id=i.power_port_id)
+                    for pp in device_pp:
+                        if pp.name == ppt.name:
+                            # Save matching to add the correct power port later
+                            matching[i.id] = pp.id
+                            found = True
+                    
+                    # If at least on power port is found there is a dependency
+                    # Better not to sync at all
+                    if not found:
+                        mismatch = True
+                        break
+            
+            if not mismatch:
+                # Manually validating interfaces and interface templates lists                
+                add_to_device = filter(
+                    lambda i: i in poweroutlets_templates.values_list("id", flat=True),
+                    map(int, filter(lambda x: x.isdigit(), request.POST.getlist("add_to_device")))
+                )
 
-                try:
-                    # If power outlets already exists, update and do not recreate
-                    po = device.poweroutlets.get(name=i["name"])
-                except PowerOutlet.DoesNotExist:
-                    po = PowerOutlet()
-                    po.device = device
-                    to_create = True
+                # Add selected interfaces to the device and count them
+                add_to_device_component = PowerOutletTemplate.objects.filter(id__in=add_to_device)
 
-                # Copy all fields from template
-                for k in i.keys():
-                    if k not in keys_to_avoid:
-                        setattr(po, k, i[k])
-                po.power_port_id = matching.get(i["id"], None)
+                bulk_create = []
+                updated = 0
+                keys_to_avoid = ["id"]
 
-                if to_create:
-                    bulk_create.append(po)
-                else:
-                    po.save()
-                    updated += 1
+                for i in add_to_device_component.values():
+                    to_create = False
 
-            created = len(PowerOutlet.objects.bulk_create(bulk_create))
+                    try:
+                        # If power outlets already exists, update and do not recreate
+                        po = device.poweroutlets.get(name=i["name"])
+                    except PowerOutlet.DoesNotExist:
+                        po = PowerOutlet()
+                        po.device = device
+                        to_create = True
 
-            # Getting and validating a list of interfaces to rename
-            fix_name_components = filter(lambda i: str(i.id) in request.POST.getlist("fix_name"), poweroutlets)
+                    # Copy all fields from template
+                    for k in i.keys():
+                        if k not in keys_to_avoid:
+                            setattr(po, k, i[k])
+                    po.power_port_id = matching.get(i["id"], None)
 
-            # Casting interface templates into UnifiedInterface objects for proper comparison with interfaces for renaming
-            unified_component_templates = [
-                PowerOutletComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPortTemplate.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg, is_template=True) for i in poweroutlets_templates]
+                    if to_create:
+                        bulk_create.append(po)
+                    else:
+                        po.save()
+                        updated += 1
 
-            # Rename selected interfaces
-            fixed = 0
-            for component in fix_name_components:
-                unified_component = [PowerOutletComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPort.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg) for i in poweroutlets]
+                created = len(PowerOutlet.objects.bulk_create(bulk_create))
 
-                try:
-                    # Try to extract an interface template with the corresponding name
-                    corresponding_template = unified_component_templates[unified_component_templates.index(unified_component)]
-                    component.name = corresponding_template.name
-                    component.save()
-                    fixed += 1
-                except ValueError:
-                    pass
-        else:
-            message.append("Dependecy detected, sync power ports first!")
+                # Getting and validating a list of interfaces to rename
+                fix_name_components = filter(lambda i: str(i.id) in request.POST.getlist("fix_name"), poweroutlets)
 
-        if created > 0:
-            message.append(f"created {created} interfaces")
-        if updated > 0:
-            message.append(f"updated {updated} interfaces")
-        if deleted > 0:
-            message.append(f"deleted {deleted} interfaces")
-        if fixed > 0:
-            message.append(f"fixed {fixed} interfaces")
+                # Casting interface templates into UnifiedInterface objects for proper comparison with interfaces for renaming
+                unified_component_templates = [
+                    PowerOutletComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPortTemplate.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg, is_template=True) for i in poweroutlets_templates]
 
-        messages.info(request, "; ".join(message).capitalize())
+                # Rename selected interfaces
+                fixed = 0
+                for component in fix_name_components:
+                    unified_component = [PowerOutletComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPort.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg) for i in poweroutlets]
 
-        return redirect(request.path)
+                    try:
+                        # Try to extract an interface template with the corresponding name
+                        corresponding_template = unified_component_templates[unified_component_templates.index(unified_component)]
+                        component.name = corresponding_template.name
+                        component.save()
+                        fixed += 1
+                    except ValueError:
+                        pass
+            else:
+                message.append("Dependecy detected, sync power ports first!")
+
+            if created > 0:
+                message.append(f"created {created} interfaces")
+            if updated > 0:
+                message.append(f"updated {updated} interfaces")
+            if deleted > 0:
+                message.append(f"deleted {deleted} interfaces")
+            if fixed > 0:
+                message.append(f"fixed {fixed} interfaces")
+
+            messages.info(request, "; ".join(message).capitalize())
+
+            return redirect(request.path)
 
 class FrontPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View):
     """Comparison of interfaces between a device and a device type and beautiful visualization"""
@@ -271,10 +350,10 @@ class FrontPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
         if form.is_valid():
             device = get_object_or_404(Device.objects.filter(id=device_id))
 
-        frontports = device.frontports.all()
-        frontports_templates = FrontPortTemplate.objects.filter(device_type=device.device_type)
-            
-        return post_components(request, device, frontports, frontports_templates, FrontPort, FrontPortTemplate)
+            frontports = device.frontports.all()
+            frontports_templates = FrontPortTemplate.objects.filter(device_type=device.device_type)
+                
+            return post_components(request, device, frontports, frontports_templates, FrontPort, FrontPortTemplate)
 
 class RearPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View):
     """Comparison of interfaces between a device and a device type and beautiful visualization"""
@@ -293,10 +372,10 @@ class RearPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View):
         if form.is_valid():
             device = get_object_or_404(Device.objects.filter(id=device_id))
 
-        rearports = device.rearports.all()
-        rearports_templates = RearPortTemplate.objects.filter(device_type=device.device_type)
-            
-        return post_components(request, device, rearports, rearports_templates, RearPort, RearPortTemplate)
+            rearports = device.rearports.all()
+            rearports_templates = RearPortTemplate.objects.filter(device_type=device.device_type)
+                
+            return post_components(request, device, rearports, rearports_templates, RearPort, RearPortTemplate)
 
 class DeviceBayComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View):
     """Comparison of interfaces between a device and a device type and beautiful visualization"""
@@ -319,7 +398,25 @@ class DeviceBayComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
         if form.is_valid():
             device = get_object_or_404(Device.objects.filter(id=device_id))
 
-        devicebays = device.devicebays.all()
-        devicebays_templates = DeviceBayTemplate.objects.filter(device_type=device.device_type)
+            devicebays = device.devicebays.all()
+            devicebays_templates = DeviceBayTemplate.objects.filter(device_type=device.device_type)
+
+            # Getting and validating a list of devicebays to rename
+            fix_name_components = filter(
+                lambda i: str(i.id) in request.POST.getlist("fix_name"), devicebays
+            )
+
+            unified_devicebay_templates = [
+                DeviceBayComparison(i.id, i.name, i.label, i.description, is_template=True) for i in devicebays_templates]
             
-        return post_components(request, device, devicebays, devicebays_templates, DeviceBay, DeviceBayTemplate)
+            unified_devicebays = []
+
+            for component in fix_name_components:
+                    unified_devicebays.append((component, DeviceBayComparison(
+                            component.id,
+                            component.name,
+                            component.label,
+                            component.description
+                        )))
+                
+            return post_components(request, device, devicebays, devicebays_templates, DeviceBay, DeviceBayTemplate, unified_devicebays, unified_devicebay_templates)

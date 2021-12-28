@@ -59,6 +59,10 @@ class InterfaceComparison(ParentTypedComparison):
             and (self.mgmt_only == other.mgmt_only)
         )
 
+    def __hash__(self):
+        # Ignore some fields when hashing; ignore interface name case and whitespaces
+        return hash((self.name.lower().replace(" ", ""), self.type))
+
 
 @dataclass(frozen=True)
 class FrontPortComparison(ParentTypedComparison):
@@ -143,24 +147,3 @@ class DeviceBayComparison(ParentComparison):
     """A unified way to represent the interface and interface template"""
 
     is_template: bool = False
-
-
-@dataclass(frozen=True)
-class UnifiedInterface:
-    """A unified way to represent the interface and interface template"""
-
-    id: int
-    name: str
-    type: str = ""
-    type_display: str = ""
-    is_template: bool = False
-
-    def __eq__(self, other):
-        # Ignore some fields when comparing; ignore interface name case and whitespaces
-        return (
-            self.name.lower().replace(" ", "") == other.name.lower().replace(" ", "")
-        ) and (self.type == other.type)
-
-    def __hash__(self):
-        # Ignore some fields when hashing; ignore interface name case and whitespaces
-        return hash((self.name.lower().replace(" ", ""), self.type))
