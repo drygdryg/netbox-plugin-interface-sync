@@ -1,8 +1,8 @@
-import re, copy
+import re
 from typing import Iterable
-from dataclasses import dataclass
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from .comparison import UnifiedInterface, ComparisonPowerOutlet
 
 def split(s):
     for x, y in re.findall(r'(\d*)(\D*)', s):
@@ -126,34 +126,3 @@ def post_components(request, device, components, component_templates, ObjectType
     messages.success(request, "; ".join(message).capitalize())
 
     return redirect(request.path)
-
-
-@dataclass(frozen=True)
-class UnifiedInterface:
-    """A unified way to represent the interface and interface template"""
-    id: int
-    name: str
-    type: str = ""
-    type_display: str = ""
-    is_template: bool = False
-
-    def __eq__(self, other):
-        # Ignore some fields when comparing; ignore interface name case and whitespaces
-        return (self.name.lower().replace(' ', '') == other.name.lower().replace(' ', '')) and (self.type == other.type)
-
-    def __hash__(self):
-        # Ignore some fields when hashing; ignore interface name case and whitespaces
-        return hash((self.name.lower().replace(' ', ''), self.type))
-
-@dataclass(frozen=True)
-class ComparisonPowerOutlet(UnifiedInterface):
-
-    power_port_name: str = ""
-
-    def __eq__(self, other):
-        # Ignore some fields when comparing; ignore interface name case and whitespaces
-        return (self.name.lower().replace(' ', '') == other.name.lower().replace(' ', '')) and (self.type == other.type) and (self.power_port_name == other.power_port_name)
-
-    def __hash__(self):
-        # Ignore some fields when hashing; ignore interface name case and whitespaces
-        return hash((self.name.lower().replace(' ', ''), self.type, self.power_port_name))

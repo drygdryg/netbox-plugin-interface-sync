@@ -7,7 +7,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.conf import settings
 from django.contrib import messages
 
-from .utils import ComparisonPowerOutlet, UnifiedInterface, natural_keys, get_components, post_components
+from .utils import natural_keys, get_components, post_components
+from .comparison import ComparisonPowerOutlet, UnifiedInterface
 from .forms import InterfaceComparisonForm
 
 config = settings.PLUGINS_CONFIG['netbox_interface_sync']
@@ -113,9 +114,10 @@ class PowerOutletComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
         poweroutlets = device.poweroutlets.all()
         poweroutlets_templates = PowerOutletTemplate.objects.filter(device_type=device.device_type)
         
-        unified_components = [ComparisonPowerOutlet(i.id, i.name, i.type, i.get_type_display(), power_port_name=PowerPort.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "") for i in poweroutlets]
+        
+        unified_components = [ComparisonPowerOutlet(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPort.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg) for i in poweroutlets]
         unified_component_templates = [
-            ComparisonPowerOutlet(i.id, i.name, i.type, i.get_type_display(), is_template=True, power_port_name=PowerPortTemplate.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "") for i in poweroutlets_templates]
+            ComparisonPowerOutlet(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPortTemplate.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg, is_template=True) for i in poweroutlets_templates]
 
         # List of interfaces and interface templates presented in the unified format
         overall_powers = list(set(unified_component_templates + unified_components))
@@ -153,7 +155,21 @@ class PowerOutletComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
         poweroutlets = device.poweroutlets.all()
         poweroutlets_templates = PowerOutletTemplate.objects.filter(device_type=device.device_type)
 
-        #se il template ha una power port che non ho nel device fisico stop
+        # Generating result message
+        message = []
+        created = 0
+        updated = 0
+        fixed = 0
+        
+        remove_from_device = filter(
+            lambda i: i in poweroutlets.values_list("id", flat=True),
+            map(int, filter(lambda x: x.isdigit(), request.POST.getlist("remove_from_device")))
+        )
+
+        # Remove selected interfaces from the device and count them
+        deleted = PowerOutlet.objects.filter(id__in=remove_from_device).delete()[0]
+
+        # Get device power ports to check dependency between power outlets
         device_pp = PowerPort.objects.filter(device_id=device.id)
 
         matching = {}
@@ -164,44 +180,52 @@ class PowerOutletComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
                 ppt = PowerPortTemplate.objects.get(id=i.power_port_id)
                 for pp in device_pp:
                     if pp.name == ppt.name:
+                        # Save matching to add the correct power port later
                         matching[i.id] = pp.id
                         found = True
                 
+                # If at least on power port is found there is a dependency
+                # Better not to sync at all
                 if not found:
                     mismatch = True
                     break
         
         if not mismatch:
-            # Manually validating interfaces and interface templates lists
-            with open("/tmp/ciccio.log", "w") as f:
-                f.write(str(request.POST.getlist("add_to_device")))
-                
+            # Manually validating interfaces and interface templates lists                
             add_to_device = filter(
                 lambda i: i in poweroutlets_templates.values_list("id", flat=True),
                 map(int, filter(lambda x: x.isdigit(), request.POST.getlist("add_to_device")))
             )
-            remove_from_device = filter(
-                lambda i: i in poweroutlets.values_list("id", flat=True),
-                map(int, filter(lambda x: x.isdigit(), request.POST.getlist("remove_from_device")))
-            )
-
-            # Remove selected interfaces from the device and count them
-            deleted = PowerOutlet.objects.filter(id__in=remove_from_device).delete()[0]
 
             # Add selected interfaces to the device and count them
             add_to_device_component = PowerOutletTemplate.objects.filter(id__in=add_to_device)
 
             bulk_create = []
+            updated = 0
             keys_to_avoid = ["id"]
 
             for i in add_to_device_component.values():
-                tmp = PowerOutlet()
-                tmp.device = device
+                to_create = False
+
+                try:
+                    # If power outlets already exists, update and do not recreate
+                    po = device.poweroutlets.get(name=i["name"])
+                except PowerOutlet.DoesNotExist:
+                    po = PowerOutlet()
+                    po.device = device
+                    to_create = True
+
+                # Copy all fields from template
                 for k in i.keys():
                     if k not in keys_to_avoid:
-                        setattr(tmp, k, i[k])
-                tmp.power_port_id = matching.get(i["id"], None)
-                bulk_create.append(tmp)
+                        setattr(po, k, i[k])
+                po.power_port_id = matching.get(i["id"], None)
+
+                if to_create:
+                    bulk_create.append(po)
+                else:
+                    po.save()
+                    updated += 1
 
             created = len(PowerOutlet.objects.bulk_create(bulk_create))
 
@@ -210,13 +234,12 @@ class PowerOutletComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
 
             # Casting interface templates into UnifiedInterface objects for proper comparison with interfaces for renaming
             unified_component_templates = [
-                ComparisonPowerOutlet(i.id, i.name, i.type, i.get_type_display(), is_template=True, power_port_name=PowerPortTemplate.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "") for i in poweroutlets_templates]
-
+                ComparisonPowerOutlet(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPortTemplate.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg, is_template=True) for i in poweroutlets_templates]
 
             # Rename selected interfaces
             fixed = 0
             for component in fix_name_components:
-                unified_component = [ComparisonPowerOutlet(i.id, i.name, i.type, i.get_type_display(), power_port_name=PowerPort.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "") for i in poweroutlets]
+                unified_component = [ComparisonPowerOutlet(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPort.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg) for i in poweroutlets]
 
                 try:
                     # Try to extract an interface template with the corresponding name
@@ -226,21 +249,21 @@ class PowerOutletComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
                     fixed += 1
                 except ValueError:
                     pass
-
-            # Generating result message
-            message = []
-            if created > 0:
-                message.append(f"created {created} interfaces")
-            if deleted > 0:
-                message.append(f"deleted {deleted} interfaces")
-            if fixed > 0:
-                message.append(f"fixed {fixed} interfaces")
-            messages.success(request, "; ".join(message).capitalize())
-
-            return redirect(request.path)
         else:
-            messages.error(request, "Fai prima le power ports")
-            return redirect(request.path)
+            message.append("Dependecy detected, sync power ports first!")
+
+        if created > 0:
+            message.append(f"created {created} interfaces")
+        if updated > 0:
+            message.append(f"updated {updated} interfaces")
+        if deleted > 0:
+            message.append(f"deleted {deleted} interfaces")
+        if fixed > 0:
+            message.append(f"fixed {fixed} interfaces")
+
+        messages.info(request, "; ".join(message).capitalize())
+
+        return redirect(request.path)
 
 class FrontPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View):
     """Comparison of interfaces between a device and a device type and beautiful visualization"""
