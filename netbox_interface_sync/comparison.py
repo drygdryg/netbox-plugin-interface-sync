@@ -146,6 +146,10 @@ class PowerPortComparison(ParentTypedComparison):
             and (self.allocated_draw == other.allocated_draw)
         )
 
+    def __hash__(self):
+        # Ignore some fields when hashing; ignore interface name case and whitespaces
+        return hash((self.name.lower().replace(" ", ""), self.type))
+
 
 @dataclass(frozen=True)
 class PowerOutletComparison(ParentTypedComparison):

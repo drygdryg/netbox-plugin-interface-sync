@@ -317,7 +317,7 @@ class PowerOutletComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
                     except ValueError:
                         pass
             else:
-                message.append("Dependecy detected, sync power ports first!")
+                messages.error(request, "Dependecy detected, sync power ports first!")
 
             if created > 0:
                 message.append(f"created {created} power outlet")
@@ -450,7 +450,7 @@ class FrontPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
                     except ValueError:
                         pass
             else:
-                message.append("Dependecy detected, sync rear ports first!")
+                messages.error(request, "Dependecy detected, sync power ports first!")
 
             if created > 0:
                 message.append(f"created {created} front ports")
