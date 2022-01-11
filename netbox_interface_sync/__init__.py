@@ -9,7 +9,8 @@ class Config(PluginConfig):
     author = 'Victor Golovanenko'
     author_email = 'drygdryg2014@yandex.ru'
     default_settings = {
-        'exclude_virtual_interfaces': True
+        'exclude_virtual_interfaces': True,
+        'include_interfaces_panel': False
     }
 
 
