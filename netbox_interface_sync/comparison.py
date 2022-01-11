@@ -69,8 +69,24 @@ class FrontPortComparison(ParentTypedComparison):
     """A unified way to represent the front port and front port template"""
 
     color: str
-    rearports: str
+    # rear_port_id: int
+    rear_port_position: int
     is_template: bool = False
+
+    def __eq__(self, other):
+        # Ignore some fields when comparing; ignore interface name case and whitespaces
+        return (
+            (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
+            and (self.label == other.label)
+            and (self.description == other.description)
+            and (self.type == other.type)
+            and (self.color == other.color)
+            and (self.rear_port_position == other.rear_port_position)
+        )
+
+    def __hash__(self):
+        # Ignore some fields when hashing; ignore interface name case and whitespaces
+        return hash((self.name.lower().replace(" ", ""), self.type))
 
 
 @dataclass(frozen=True)
@@ -78,8 +94,23 @@ class RearPortComparison(ParentTypedComparison):
     """A unified way to represent the rear port and rear port template"""
 
     color: str
-    positions: str
+    positions: int
     is_template: bool = False
+
+    def __eq__(self, other):
+        # Ignore some fields when comparing; ignore interface name case and whitespaces
+        return (
+            (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
+            and (self.label == other.label)
+            and (self.description == other.description)
+            and (self.type == other.type)
+            and (self.color == other.color)
+            and (self.positions == other.positions)
+        )
+
+    def __hash__(self):
+        # Ignore some fields when hashing; ignore interface name case and whitespaces
+        return hash((self.name.lower().replace(" ", ""), self.type))
 
 
 @dataclass(frozen=True, eq=False)
