@@ -20,6 +20,9 @@ class ParentComparison:
     def __hash__(self):
         return hash(self.name.lower().replace(" ", ""))
 
+    def __str__(self):
+        return f"Label: {self.label}\nDescription: {self.description}"
+
 
 @dataclass(frozen=True)
 class ParentTypedComparison(ParentComparison):
@@ -40,6 +43,9 @@ class ParentTypedComparison(ParentComparison):
     def __hash__(self):
         # Ignore some fields when hashing; ignore interface name case and whitespaces
         return hash((self.name.lower().replace(" ", ""), self.type))
+
+    def __str__(self):
+        return f"{super().__str__()}\nType: {self.type_display}"
 
 
 @dataclass(frozen=True)
@@ -62,6 +68,9 @@ class InterfaceComparison(ParentTypedComparison):
     def __hash__(self):
         # Ignore some fields when hashing; ignore interface name case and whitespaces
         return hash((self.name.lower().replace(" ", ""), self.type))
+
+    def __str__(self):
+        return f"{super().__str__()}\nManagement only: {self.mgmt_only}"
 
 
 @dataclass(frozen=True)
@@ -88,6 +97,9 @@ class FrontPortComparison(ParentTypedComparison):
         # Ignore some fields when hashing; ignore interface name case and whitespaces
         return hash((self.name.lower().replace(" ", ""), self.type))
 
+    def __str__(self):
+        return f"{super().__str__()}\nColor: {self.color}\nPosition: {self.rear_port_position}"
+
 
 @dataclass(frozen=True)
 class RearPortComparison(ParentTypedComparison):
@@ -111,6 +123,9 @@ class RearPortComparison(ParentTypedComparison):
     def __hash__(self):
         # Ignore some fields when hashing; ignore interface name case and whitespaces
         return hash((self.name.lower().replace(" ", ""), self.type))
+
+    def __str__(self):
+        return f"{super().__str__()}\nColor: {self.color}\nPositions: {self.positions}"
 
 
 @dataclass(frozen=True, eq=False)
@@ -150,6 +165,9 @@ class PowerPortComparison(ParentTypedComparison):
         # Ignore some fields when hashing; ignore interface name case and whitespaces
         return hash((self.name.lower().replace(" ", ""), self.type))
 
+    def __str__(self):
+        return f"{super().__str__()}\nMaximum draw: {self.maximum_draw}\nAllocated draw: {self.allocated_draw}"
+
 
 @dataclass(frozen=True)
 class PowerOutletComparison(ParentTypedComparison):
@@ -175,6 +193,9 @@ class PowerOutletComparison(ParentTypedComparison):
         return hash(
             (self.name.lower().replace(" ", ""), self.type, self.power_port_name)
         )
+
+    def __str__(self):
+        return f"{super().__str__()}\nPower port name: {self.power_port_name}\nFeed leg: {self.feed_leg}"
 
 
 @dataclass(frozen=True, eq=False)

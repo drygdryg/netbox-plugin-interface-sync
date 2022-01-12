@@ -19,13 +19,13 @@ def human_sorted(iterable: Iterable):
     return sorted(iterable, key=natural_keys)
 
 
-def get_components(request, device, components, unified_components, unified_component_templates):
-    # List of interfaces and interface templates presented in the unified format
+def get_components(request, device, components, unified_components, unified_component_templates, component_type):
+    # List of components and components templates presented in the unified format
     overall_powers = list(set(unified_component_templates + unified_components))
     overall_powers.sort(key=lambda o: natural_keys(o.name))
 
     comparison_templates = []
-    comparison_interfaces = []
+    comparison_components = []
     for i in overall_powers:
         try:
             comparison_templates.append(
@@ -35,20 +35,21 @@ def get_components(request, device, components, unified_components, unified_comp
             comparison_templates.append(None)
 
         try:
-            comparison_interfaces.append(
+            comparison_components.append(
                 unified_components[unified_components.index(i)]
             )
         except ValueError:
-            comparison_interfaces.append(None)
+            comparison_components.append(None)
 
-    comparison_items = list(zip(comparison_templates, comparison_interfaces))
+    comparison_items = list(zip(comparison_templates, comparison_components))
     return render(
         request,
-        "netbox_interface_sync/interface_comparison.html",
+        "netbox_interface_sync/components_comparison.html",
         {
+            "component_type": component_type,
             "comparison_items": comparison_items,
             "templates_count": len(unified_component_templates),
-            "interfaces_count": len(components),
+            "components_count": len(components),
             "device": device,
         },
     )

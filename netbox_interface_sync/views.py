@@ -29,7 +29,7 @@ class InterfaceComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
         unified_interface_templates = [
             InterfaceComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), i.mgmt_only, is_template=True) for i in interface_templates]
 
-        return get_components(request, device, interfaces, unified_interfaces, unified_interface_templates)
+        return get_components(request, device, interfaces, unified_interfaces, unified_interface_templates, "Interfaces")
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
@@ -76,7 +76,7 @@ class PowerPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
         unified_powerport_templates = [
             PowerPortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), i.maximum_draw, i.allocated_draw, is_template=True) for i in powerports_templates]
 
-        return get_components(request, device, powerports, unified_powerports, unified_powerport_templates)
+        return get_components(request, device, powerports, unified_powerports, unified_powerport_templates, "Power ports")
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
@@ -123,7 +123,7 @@ class ConsolePortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
         unified_consoleport_templates = [
             ConsolePortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), is_template=True) for i in consoleports_templates]
 
-        return get_components(request, device, consoleports, unified_consoleports, unified_consoleport_templates)
+        return get_components(request, device, consoleports, unified_consoleports, unified_consoleport_templates, "Console ports")
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
@@ -168,7 +168,7 @@ class ConsoleServerPortComparisonView(LoginRequiredMixin, PermissionRequiredMixi
         unified_consoleserverport_templates = [
             ConsoleServerPortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), is_template=True) for i in consoleserverports_templates]
 
-        return get_components(request, device, consoleserverports, unified_consoleserverports, unified_consoleserverport_templates)
+        return get_components(request, device, consoleserverports, unified_consoleserverports, unified_consoleserverport_templates, "Console server ports")
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
@@ -213,7 +213,7 @@ class PowerOutletComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
         unified_poweroutlet_templates = [
             PowerOutletComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), power_port_name=PowerPortTemplate.objects.get(id=i.power_port_id).name if i.power_port_id is not None else "", feed_leg=i.feed_leg, is_template=True) for i in poweroutlets_templates]
 
-        return get_components(request, device, poweroutlets, unified_poweroutlets, unified_poweroutlet_templates)
+        return get_components(request, device, poweroutlets, unified_poweroutlets, unified_poweroutlet_templates, "Power outlets")
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
@@ -347,7 +347,7 @@ class FrontPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
         unified_frontports_templates = [
             FrontPortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), i.color, i.rear_port_position, is_template=True) for i in frontports_templates]
 
-        return get_components(request, device, frontports, unified_frontports, unified_frontports_templates)
+        return get_components(request, device, frontports, unified_frontports, unified_frontports_templates, "Front ports")
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
@@ -479,7 +479,7 @@ class RearPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View):
         unified_rearports_templates = [
             RearPortComparison(i.id, i.name, i.label, i.description, i.type, i.get_type_display(), i.color, i.positions, is_template=True) for i in rearports_templates]
 
-        return get_components(request, device, rearports, unified_rearports, unified_rearports_templates)
+        return get_components(request, device, rearports, unified_rearports, unified_rearports_templates, "Rear ports")
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
@@ -536,7 +536,7 @@ class DeviceBayComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
         unified_devicebay_templates = [
             DeviceBayComparison(i.id, i.name, i.label, i.description, is_template=True) for i in devicebays_templates]
             
-        return get_components(request, device, devicebays, unified_devicebays, unified_devicebay_templates)
+        return get_components(request, device, devicebays, unified_devicebays, unified_devicebay_templates, "Device bays")
 
     def post(self, request, device_id):
         form = InterfaceComparisonForm(request.POST)
