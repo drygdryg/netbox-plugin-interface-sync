@@ -56,9 +56,9 @@ def get_components(request, device, components, unified_components, unified_comp
 
 
 def post_components(
-    request, device, components, component_templates, ObjectType, ObjectTemplateType, unified_component, unified_component_templates
+    request, device, components, component_templates, ObjectType, ObjectTemplateType, unified_component, unified_component_templates, component_type
 ):
-    # Manually validating interfaces and interface templates lists
+    # Manually validating components and component templates lists
     add_to_device = filter(
         lambda i: i in component_templates.values_list("id", flat=True),
         map(int, filter(lambda x: x.isdigit(), request.POST.getlist("add_to_device"))),
@@ -71,10 +71,10 @@ def post_components(
         ),
     )
 
-    # Remove selected interfaces from the device and count them
+    # Remove selected component from the device and count them
     deleted = ObjectType.objects.filter(id__in=remove_from_device).delete()[0]
 
-    # Add selected interfaces to the device and count them
+    # Add selected components to the device and count them
     add_to_device_component = ObjectTemplateType.objects.filter(id__in=add_to_device)
 
     bulk_create = []
@@ -103,11 +103,11 @@ def post_components(
 
     created = len(ObjectType.objects.bulk_create(bulk_create))
 
-    # Rename selected interfaces
+    # Rename selected components
     fixed = 0
     for component, component_comparison in unified_component:
         try:
-            # Try to extract an interface template with the corresponding name
+            # Try to extract a component template with the corresponding name
             corresponding_template = unified_component_templates[
                 unified_component_templates.index(component_comparison)
             ]
@@ -120,13 +120,13 @@ def post_components(
     # Generating result message
     message = []
     if created > 0:
-        message.append(f"created {created} interfaces")
+        message.append(f"created {created} {component_type}")
     if updated > 0:
-        message.append(f"updated {updated} interfaces")
+        message.append(f"updated {updated} {component_type}")
     if deleted > 0:
-        message.append(f"deleted {deleted} interfaces")
+        message.append(f"deleted {deleted} {component_type}")
     if fixed > 0:
-        message.append(f"fixed {fixed} interfaces")
+        message.append(f"fixed {fixed} {component_type}")
     messages.success(request, "; ".join(message).capitalize())
 
     return redirect(request.path)

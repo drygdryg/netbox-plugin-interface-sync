@@ -11,6 +11,7 @@ class ParentComparison:
     description: str
 
     def __eq__(self, other):
+        # Ignore some fields when comparing; ignore component name case and whitespaces
         return (
             (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
             and (self.label == other.label)
@@ -18,6 +19,7 @@ class ParentComparison:
         )
 
     def __hash__(self):
+        # Ignore some fields when hashing; ignore component name case and whitespaces
         return hash(self.name.lower().replace(" ", ""))
 
     def __str__(self):
@@ -32,7 +34,6 @@ class ParentTypedComparison(ParentComparison):
     type_display: str
 
     def __eq__(self, other):
-        # Ignore some fields when comparing; ignore interface name case and whitespaces
         return (
             (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
             and (self.label == other.label)
@@ -41,7 +42,6 @@ class ParentTypedComparison(ParentComparison):
         )
 
     def __hash__(self):
-        # Ignore some fields when hashing; ignore interface name case and whitespaces
         return hash((self.name.lower().replace(" ", ""), self.type))
 
     def __str__(self):
@@ -56,7 +56,6 @@ class InterfaceComparison(ParentTypedComparison):
     is_template: bool = False
 
     def __eq__(self, other):
-        # Ignore some fields when comparing; ignore interface name case and whitespaces
         return (
             (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
             and (self.label == other.label)
@@ -66,7 +65,6 @@ class InterfaceComparison(ParentTypedComparison):
         )
 
     def __hash__(self):
-        # Ignore some fields when hashing; ignore interface name case and whitespaces
         return hash((self.name.lower().replace(" ", ""), self.type))
 
     def __str__(self):
@@ -83,7 +81,6 @@ class FrontPortComparison(ParentTypedComparison):
     is_template: bool = False
 
     def __eq__(self, other):
-        # Ignore some fields when comparing; ignore interface name case and whitespaces
         return (
             (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
             and (self.label == other.label)
@@ -94,7 +91,6 @@ class FrontPortComparison(ParentTypedComparison):
         )
 
     def __hash__(self):
-        # Ignore some fields when hashing; ignore interface name case and whitespaces
         return hash((self.name.lower().replace(" ", ""), self.type))
 
     def __str__(self):
@@ -110,7 +106,6 @@ class RearPortComparison(ParentTypedComparison):
     is_template: bool = False
 
     def __eq__(self, other):
-        # Ignore some fields when comparing; ignore interface name case and whitespaces
         return (
             (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
             and (self.label == other.label)
@@ -121,7 +116,6 @@ class RearPortComparison(ParentTypedComparison):
         )
 
     def __hash__(self):
-        # Ignore some fields when hashing; ignore interface name case and whitespaces
         return hash((self.name.lower().replace(" ", ""), self.type))
 
     def __str__(self):
@@ -151,7 +145,6 @@ class PowerPortComparison(ParentTypedComparison):
     is_template: bool = False
 
     def __eq__(self, other):
-        # Ignore some fields when comparing; ignore interface name case and whitespaces
         return (
             (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
             and (self.label == other.label)
@@ -162,7 +155,6 @@ class PowerPortComparison(ParentTypedComparison):
         )
 
     def __hash__(self):
-        # Ignore some fields when hashing; ignore interface name case and whitespaces
         return hash((self.name.lower().replace(" ", ""), self.type))
 
     def __str__(self):
@@ -178,7 +170,6 @@ class PowerOutletComparison(ParentTypedComparison):
     is_template: bool = False
 
     def __eq__(self, other):
-        # Ignore some fields when comparing; ignore interface name case and whitespaces
         return (
             (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
             and (self.label == other.label)
@@ -189,7 +180,6 @@ class PowerOutletComparison(ParentTypedComparison):
         )
 
     def __hash__(self):
-        # Ignore some fields when hashing; ignore interface name case and whitespaces
         return hash(
             (self.name.lower().replace(" ", ""), self.type, self.power_port_name)
         )
@@ -200,6 +190,6 @@ class PowerOutletComparison(ParentTypedComparison):
 
 @dataclass(frozen=True, eq=False)
 class DeviceBayComparison(ParentComparison):
-    """A unified way to represent the interface and interface template"""
+    """A unified way to represent the device bay and device bay template"""
 
     is_template: bool = False
