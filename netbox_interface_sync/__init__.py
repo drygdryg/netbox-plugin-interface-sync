@@ -10,7 +10,11 @@ class Config(PluginConfig):
     author_email = 'drygdryg2014@yandex.ru'
     default_settings = {
         'exclude_virtual_interfaces': True,
-        'include_interfaces_panel': False
+        'include_interfaces_panel': False,
+        # Compare description during diff
+        'compare_description': False,
+        # Sync or not description from device type
+        'exclude_description': False
     }
 
 

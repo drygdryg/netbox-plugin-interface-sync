@@ -3,6 +3,9 @@ from typing import Iterable
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
+from django.conf import settings
+
+config = settings.PLUGINS_CONFIG['netbox_interface_sync']
 
 
 def split(s):
@@ -80,6 +83,9 @@ def post_components(
     bulk_create = []
     updated = 0
     keys_to_avoid = ["id"]
+
+    if config["exclude_description"]:
+        keys_to_avoid.append("description")
 
     for i in add_to_device_component.values():
         to_create = False

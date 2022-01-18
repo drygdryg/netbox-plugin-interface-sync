@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from django.conf import settings
+
+config = settings.PLUGINS_CONFIG["netbox_interface_sync"]
 
 
 @dataclass(frozen=True)
@@ -12,11 +15,14 @@ class ParentComparison:
 
     def __eq__(self, other):
         # Ignore some fields when comparing; ignore component name case and whitespaces
-        return (
-            (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
-            and (self.label == other.label)
-            and (self.description == other.description)
-        )
+        eq = (
+            self.name.lower().replace(" ", "") == other.name.lower().replace(" ", "")
+        ) and (self.label == other.label)
+
+        if config["compare_description"]:
+            eq = eq and (self.description == other.description)
+
+        return eq
 
     def __hash__(self):
         # Ignore some fields when hashing; ignore component name case and whitespaces
@@ -34,12 +40,16 @@ class ParentTypedComparison(ParentComparison):
     type_display: str
 
     def __eq__(self, other):
-        return (
+        eq = (
             (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
             and (self.label == other.label)
-            and (self.description == other.description)
             and (self.type == other.type)
         )
+
+        if config["compare_description"]:
+            eq = eq and (self.description == other.description)
+
+        return eq
 
     def __hash__(self):
         return hash((self.name.lower().replace(" ", ""), self.type))
@@ -56,13 +66,17 @@ class InterfaceComparison(ParentTypedComparison):
     is_template: bool = False
 
     def __eq__(self, other):
-        return (
+        eq = (
             (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
             and (self.label == other.label)
-            and (self.description == other.description)
             and (self.type == other.type)
             and (self.mgmt_only == other.mgmt_only)
         )
+
+        if config["compare_description"]:
+            eq = eq and (self.description == other.description)
+
+        return eq
 
     def __hash__(self):
         return hash((self.name.lower().replace(" ", ""), self.type))
@@ -81,14 +95,18 @@ class FrontPortComparison(ParentTypedComparison):
     is_template: bool = False
 
     def __eq__(self, other):
-        return (
+        eq = (
             (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
             and (self.label == other.label)
-            and (self.description == other.description)
             and (self.type == other.type)
             and (self.color == other.color)
             and (self.rear_port_position == other.rear_port_position)
         )
+
+        if config["compare_description"]:
+            eq = eq and (self.description == other.description)
+
+        return eq
 
     def __hash__(self):
         return hash((self.name.lower().replace(" ", ""), self.type))
@@ -106,14 +124,18 @@ class RearPortComparison(ParentTypedComparison):
     is_template: bool = False
 
     def __eq__(self, other):
-        return (
+        eq = (
             (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
             and (self.label == other.label)
-            and (self.description == other.description)
             and (self.type == other.type)
             and (self.color == other.color)
             and (self.positions == other.positions)
         )
+
+        if config["compare_description"]:
+            eq = eq and (self.description == other.description)
+
+        return eq
 
     def __hash__(self):
         return hash((self.name.lower().replace(" ", ""), self.type))
@@ -145,14 +167,18 @@ class PowerPortComparison(ParentTypedComparison):
     is_template: bool = False
 
     def __eq__(self, other):
-        return (
+        eq = (
             (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
             and (self.label == other.label)
-            and (self.description == other.description)
             and (self.type == other.type)
             and (self.maximum_draw == other.maximum_draw)
             and (self.allocated_draw == other.allocated_draw)
         )
+
+        if config["compare_description"]:
+            eq = eq and (self.description == other.description)
+
+        return eq
 
     def __hash__(self):
         return hash((self.name.lower().replace(" ", ""), self.type))
@@ -170,14 +196,18 @@ class PowerOutletComparison(ParentTypedComparison):
     is_template: bool = False
 
     def __eq__(self, other):
-        return (
+        eq = (
             (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
             and (self.label == other.label)
             and (self.type == other.type)
             and (self.power_port_name == other.power_port_name)
             and (self.feed_leg == other.feed_leg)
-            and (self.description == other.description)
         )
+
+        if config["compare_description"]:
+            eq = eq and (self.description == other.description)
+
+        return eq
 
     def __hash__(self):
         return hash(
