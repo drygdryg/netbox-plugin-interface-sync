@@ -269,7 +269,7 @@ class PowerOutletComparisonView(LoginRequiredMixin, PermissionRequiredMixin, Vie
                 updated = 0
                 keys_to_avoid = ["id"]
 
-                if config["exclude_description"]:
+                if not config["compare_description"]:
                     keys_to_avoid.append("description")
 
                 for i in add_to_device_component.values():
@@ -406,7 +406,7 @@ class FrontPortComparisonView(LoginRequiredMixin, PermissionRequiredMixin, View)
                 updated = 0
                 keys_to_avoid = ["id"]
 
-                if config["exclude_description"]:
+                if not config["compare_description"]:
                     keys_to_avoid.append("description")
 
                 for i in add_to_device_component.values():
