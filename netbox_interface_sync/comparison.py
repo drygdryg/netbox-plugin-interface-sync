@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from django.conf import settings
 
 config = settings.PLUGINS_CONFIG["netbox_interface_sync"]
@@ -12,6 +12,8 @@ class ParentComparison:
     name: str
     label: str
     description: str
+
+    _non_printable_fields = ('id', 'name', 'is_template')
 
     def __eq__(self, other):
         # Ignore some fields when comparing; ignore component name case and whitespaces
@@ -28,8 +30,25 @@ class ParentComparison:
         # Ignore some fields when hashing; ignore component name case and whitespaces
         return hash(self.name.lower().replace(" ", ""))
 
+    @staticmethod
+    def __field_name_caption__(field_name: str):
+        field_captions = {
+            'type_display': 'Type',
+            'rear_port_position': 'Position'
+        }
+        return field_captions.get(field_name) or field_name.replace('_', ' ').capitalize()
+
     def __str__(self):
-        return f"Label: {self.label}\nDescription: {self.description}"
+        fields_to_display = []
+        for field in fields(self):
+            if field.name in self._non_printable_fields:
+                continue
+            field_value = getattr(self, field.name)
+            if not field_value:
+                continue
+            field_name_display = self.__field_name_caption__(field.name)
+            fields_to_display.append(f'{field_name_display}: {field_value}')
+        return '\n'.join(fields_to_display)
 
 
 @dataclass(frozen=True)
@@ -38,6 +57,8 @@ class ParentTypedComparison(ParentComparison):
 
     type: str
     type_display: str
+
+    _non_printable_fields = ParentComparison._non_printable_fields + ('type',)
 
     def __eq__(self, other):
         eq = (
@@ -53,9 +74,6 @@ class ParentTypedComparison(ParentComparison):
 
     def __hash__(self):
         return hash((self.name.lower().replace(" ", ""), self.type))
-
-    def __str__(self):
-        return f"{super().__str__()}\nType: {self.type_display}"
 
 
 @dataclass(frozen=True)
@@ -80,9 +98,6 @@ class InterfaceComparison(ParentTypedComparison):
 
     def __hash__(self):
         return hash((self.name.lower().replace(" ", ""), self.type))
-
-    def __str__(self):
-        return f"{super().__str__()}\nManagement only: {self.mgmt_only}"
 
 
 @dataclass(frozen=True)
@@ -111,9 +126,6 @@ class FrontPortComparison(ParentTypedComparison):
     def __hash__(self):
         return hash((self.name.lower().replace(" ", ""), self.type))
 
-    def __str__(self):
-        return f"{super().__str__()}\nColor: {self.color}\nPosition: {self.rear_port_position}"
-
 
 @dataclass(frozen=True)
 class RearPortComparison(ParentTypedComparison):
@@ -139,9 +151,6 @@ class RearPortComparison(ParentTypedComparison):
 
     def __hash__(self):
         return hash((self.name.lower().replace(" ", ""), self.type))
-
-    def __str__(self):
-        return f"{super().__str__()}\nColor: {self.color}\nPositions: {self.positions}"
 
 
 @dataclass(frozen=True, eq=False)
@@ -183,9 +192,6 @@ class PowerPortComparison(ParentTypedComparison):
     def __hash__(self):
         return hash((self.name.lower().replace(" ", ""), self.type))
 
-    def __str__(self):
-        return f"{super().__str__()}\nMaximum draw: {self.maximum_draw}\nAllocated draw: {self.allocated_draw}"
-
 
 @dataclass(frozen=True)
 class PowerOutletComparison(ParentTypedComparison):
@@ -213,9 +219,6 @@ class PowerOutletComparison(ParentTypedComparison):
         return hash(
             (self.name.lower().replace(" ", ""), self.type, self.power_port_name)
         )
-
-    def __str__(self):
-        return f"{super().__str__()}\nPower port name: {self.power_port_name}\nFeed leg: {self.feed_leg}"
 
 
 @dataclass(frozen=True, eq=False)
