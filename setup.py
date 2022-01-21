@@ -12,7 +12,7 @@ setup(
     author='Victor Golovanenko',
     author_email='drygdryg2014@yandex.com',
     license='GPL-3.0',
-    install_requires=[],
+    install_requires=['attrs>=21.1.0'],
     packages=["netbox_interface_sync"],
     package_data={"netbox_interface_sync": ["templates/netbox_interface_sync/*.html"]},
     zip_safe=False

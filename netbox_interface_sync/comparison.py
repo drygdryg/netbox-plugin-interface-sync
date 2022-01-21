@@ -1,228 +1,102 @@
-from dataclasses import dataclass, fields
+import attr
+from attrs import fields
+
 from django.conf import settings
 
 config = settings.PLUGINS_CONFIG["netbox_interface_sync"]
+COMPARE_DESCRIPTIONS: bool = config["compare_description"]
 
 
-@dataclass(frozen=True)
-class ParentComparison:
+@attr.s(frozen=True, auto_attribs=True)
+class BaseComparison:
     """Common fields of a device component"""
 
-    id: int
-    name: str
-    label: str
-    description: str
+    # Do not compare IDs
+    id: int = attr.ib(eq=False, hash=False, metadata={'printable': False})
+    # Compare names case-insensitively and spaces-insensitively
+    name: str = attr.ib(eq=lambda name: name.lower().replace(" ", ""), metadata={'printable': False})
+    label: str = attr.ib(hash=False)
+    # Compare descriptions if it is set by the configuration
+    description: str = attr.ib(eq=COMPARE_DESCRIPTIONS, hash=False)
+    # Do not compare `is_template` properties
+    is_template: bool = attr.ib(kw_only=True, default=False, eq=False, hash=False, metadata={'printable': False})
 
-    _non_printable_fields = ('id', 'name', 'is_template')
-
-    def __eq__(self, other):
-        # Ignore some fields when comparing; ignore component name case and whitespaces
-        eq = (
-            self.name.lower().replace(" ", "") == other.name.lower().replace(" ", "")
-        ) and (self.label == other.label)
-
-        if config["compare_description"]:
-            eq = eq and (self.description == other.description)
-
-        return eq
-
-    def __hash__(self):
-        # Ignore some fields when hashing; ignore component name case and whitespaces
-        return hash(self.name.lower().replace(" ", ""))
-
-    @staticmethod
-    def __field_name_caption__(field_name: str):
-        field_captions = {
-            'type_display': 'Type',
-            'rear_port_position': 'Position'
-        }
-        return field_captions.get(field_name) or field_name.replace('_', ' ').capitalize()
-
-    def __str__(self):
+    @property
+    def fields_display(self) -> str:
+        """Generate human-readable list of printable fields to display in the comparison table"""
         fields_to_display = []
-        for field in fields(self):
-            if field.name in self._non_printable_fields:
+        for field in fields(self.__class__):
+            if not field.metadata.get('printable', True):
                 continue
             field_value = getattr(self, field.name)
             if not field_value:
                 continue
-            field_name_display = self.__field_name_caption__(field.name)
-            fields_to_display.append(f'{field_name_display}: {field_value}')
+            field_caption = field.metadata.get('displayed_caption') or field.name.replace('_', ' ').capitalize()
+            fields_to_display.append(f'{field_caption}: {field_value}')
         return '\n'.join(fields_to_display)
 
 
-@dataclass(frozen=True)
-class ParentTypedComparison(ParentComparison):
+@attr.s(frozen=True, auto_attribs=True)
+class BaseTypedComparison(BaseComparison):
     """Common fields of a device typed component"""
 
-    type: str
-    type_display: str
-
-    _non_printable_fields = ParentComparison._non_printable_fields + ('type',)
-
-    def __eq__(self, other):
-        eq = (
-            (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
-            and (self.label == other.label)
-            and (self.type == other.type)
-        )
-
-        if config["compare_description"]:
-            eq = eq and (self.description == other.description)
-
-        return eq
-
-    def __hash__(self):
-        return hash((self.name.lower().replace(" ", ""), self.type))
+    type: str = attr.ib(hash=False, metadata={'printable': False})
+    type_display: str = attr.ib(eq=False, hash=False, metadata={'displayed_caption': 'Type'})
 
 
-@dataclass(frozen=True)
-class InterfaceComparison(ParentTypedComparison):
+@attr.s(frozen=True, auto_attribs=True)
+class DeviceBayComparison(BaseComparison):
+    """A unified way to represent the device bay and device bay template"""
+    pass
+
+
+@attr.s(frozen=True, auto_attribs=True)
+class InterfaceComparison(BaseTypedComparison):
     """A unified way to represent the interface and interface template"""
 
-    mgmt_only: bool
-    is_template: bool = False
-
-    def __eq__(self, other):
-        eq = (
-            (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
-            and (self.label == other.label)
-            and (self.type == other.type)
-            and (self.mgmt_only == other.mgmt_only)
-        )
-
-        if config["compare_description"]:
-            eq = eq and (self.description == other.description)
-
-        return eq
-
-    def __hash__(self):
-        return hash((self.name.lower().replace(" ", ""), self.type))
+    mgmt_only: bool = attr.ib(hash=False)
 
 
-@dataclass(frozen=True)
-class FrontPortComparison(ParentTypedComparison):
+@attr.s(frozen=True, auto_attribs=True)
+class FrontPortComparison(BaseTypedComparison):
     """A unified way to represent the front port and front port template"""
 
-    color: str
+    color: str = attr.ib(hash=False)
     # rear_port_id: int
-    rear_port_position: int
-    is_template: bool = False
-
-    def __eq__(self, other):
-        eq = (
-            (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
-            and (self.label == other.label)
-            and (self.type == other.type)
-            and (self.color == other.color)
-            and (self.rear_port_position == other.rear_port_position)
-        )
-
-        if config["compare_description"]:
-            eq = eq and (self.description == other.description)
-
-        return eq
-
-    def __hash__(self):
-        return hash((self.name.lower().replace(" ", ""), self.type))
+    rear_port_position: int = attr.ib(hash=False, metadata={'displayed_caption': 'Position'})
 
 
-@dataclass(frozen=True)
-class RearPortComparison(ParentTypedComparison):
+@attr.s(frozen=True, auto_attribs=True)
+class RearPortComparison(BaseTypedComparison):
     """A unified way to represent the rear port and rear port template"""
 
-    color: str
-    positions: int
-    is_template: bool = False
-
-    def __eq__(self, other):
-        eq = (
-            (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
-            and (self.label == other.label)
-            and (self.type == other.type)
-            and (self.color == other.color)
-            and (self.positions == other.positions)
-        )
-
-        if config["compare_description"]:
-            eq = eq and (self.description == other.description)
-
-        return eq
-
-    def __hash__(self):
-        return hash((self.name.lower().replace(" ", ""), self.type))
+    color: str = attr.ib(hash=False)
+    positions: int = attr.ib(hash=False)
 
 
-@dataclass(frozen=True, eq=False)
-class ConsolePortComparison(ParentTypedComparison):
+@attr.s(frozen=True, auto_attribs=True)
+class ConsolePortComparison(BaseTypedComparison):
     """A unified way to represent the consoleport and consoleport template"""
+    pass
 
-    is_template: bool = False
 
-
-@dataclass(frozen=True, eq=False)
-class ConsoleServerPortComparison(ParentTypedComparison):
+@attr.s(frozen=True, auto_attribs=True)
+class ConsoleServerPortComparison(BaseTypedComparison):
     """A unified way to represent the consoleserverport and consoleserverport template"""
+    pass
 
-    is_template: bool = False
 
-
-@dataclass(frozen=True)
-class PowerPortComparison(ParentTypedComparison):
+@attr.s(frozen=True, auto_attribs=True)
+class PowerPortComparison(BaseTypedComparison):
     """A unified way to represent the power port and power port template"""
 
-    maximum_draw: str
-    allocated_draw: str
-    is_template: bool = False
-
-    def __eq__(self, other):
-        eq = (
-            (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
-            and (self.label == other.label)
-            and (self.type == other.type)
-            and (self.maximum_draw == other.maximum_draw)
-            and (self.allocated_draw == other.allocated_draw)
-        )
-
-        if config["compare_description"]:
-            eq = eq and (self.description == other.description)
-
-        return eq
-
-    def __hash__(self):
-        return hash((self.name.lower().replace(" ", ""), self.type))
+    maximum_draw: str = attr.ib(hash=False)
+    allocated_draw: str = attr.ib(hash=False)
 
 
-@dataclass(frozen=True)
-class PowerOutletComparison(ParentTypedComparison):
+@attr.s(frozen=True, auto_attribs=True)
+class PowerOutletComparison(BaseTypedComparison):
     """A unified way to represent the power outlet and power outlet template"""
 
-    power_port_name: str = ""
-    feed_leg: str = ""
-    is_template: bool = False
-
-    def __eq__(self, other):
-        eq = (
-            (self.name.lower().replace(" ", "") == other.name.lower().replace(" ", ""))
-            and (self.label == other.label)
-            and (self.type == other.type)
-            and (self.power_port_name == other.power_port_name)
-            and (self.feed_leg == other.feed_leg)
-        )
-
-        if config["compare_description"]:
-            eq = eq and (self.description == other.description)
-
-        return eq
-
-    def __hash__(self):
-        return hash(
-            (self.name.lower().replace(" ", ""), self.type, self.power_port_name)
-        )
-
-
-@dataclass(frozen=True, eq=False)
-class DeviceBayComparison(ParentComparison):
-    """A unified way to represent the device bay and device bay template"""
-
-    is_template: bool = False
+    power_port_name: str = attr.ib(hash=False)
+    feed_leg: str = attr.ib(hash=False)

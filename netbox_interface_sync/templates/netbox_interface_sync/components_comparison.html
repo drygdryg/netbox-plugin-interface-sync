@@ -26,16 +26,16 @@
 </style>
 <script>
 function toggle(event) {
-  event = event || window.event;
-  var src = event.target || event.srcElement || event;
-  checkboxes = document.getElementsByName(src.id);
-  for(var checkbox of checkboxes) checkbox.checked = src.checked;
+    event = event || window.event;
+    const src = event.target || event.srcElement || event;
+    const checkboxes = document.getElementsByName(src.id);
+    for(const checkbox of checkboxes) checkbox.checked = src.checked;
 }
 
 function uncheck(event) {
-  event = event || window.event;
-  var src = event.target || event.srcElement || event;
-  if (src.checked == false) {
+    event = event || window.event;
+    const src = event.target || event.srcElement || event;
+    if (src.checked === false) {
     document.getElementById(src.name).checked = false;
   }
 }
@@ -99,7 +99,7 @@ function uncheck(event) {
                         {{ component_template.name }}
                         {% endif %}
                     </th>
-                    <td style="white-space:pre" {% if not component %}class="table-danger"{% endif %}>{{ component_template }}</td>
+                    <td style="white-space:pre" {% if not component %}class="table-danger"{% endif %}>{{ component_template.fields_display }}</td>
                     <td {% if not component %}class="table-danger"{% endif %}>
                         {% if not component %}
                         <label>
@@ -122,7 +122,7 @@ function uncheck(event) {
                         {{ component.name }}
                         {% endif %}
                     </th>
-                    <td style="white-space:pre" {% if not component_template %}class="table-success"{% endif %}>{{ component }}</td>
+                    <td style="white-space:pre" {% if not component_template %}class="table-success"{% endif %}>{{ component.fields_display }}</td>
                     <td {% if not component_template %}class="table-success"{% endif %}>
                         {% if not component_template %}
                         <label>
