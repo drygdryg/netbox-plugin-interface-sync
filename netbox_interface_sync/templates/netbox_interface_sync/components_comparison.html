@@ -1,6 +1,6 @@
 {% extends 'base/layout.html' %}
 
-{% block title %}{{ device }} - {{ component_type }} comparison{% endblock %}
+{% block title %}{{ device }} - {{ component_type_name|capfirst }} comparison{% endblock %}
 {% block header %}
     <nav class="breadcrumb-container px-3" aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -47,11 +47,11 @@ function uncheck(event) {
         <table class="table table-hover table-bordered">
             {% if templates_count == components_count %}
             <caption class="caption-green">
-                The device and device type have the same number of {{ component_type }}.
+                The device and device type have the same number of {{ component_type_name }}.
             </caption>
             {% else %}
             <caption class="caption-red">
-                The device and device type have different number of {{ component_type|lower }}.<br>
+                The device and device type have different number of {{ component_type_name }}.<br>
                 Device: {{ components_count }}<br>
                 Device type: {{ templates_count }}
             </caption>
@@ -68,7 +68,7 @@ function uncheck(event) {
                 <th scope="col">Attributes</th>
                 <th scope="col">
                     <label>
-                        <input type="checkbox" id="add_to_device" onclick="toggle(this)">
+                        <input type="checkbox" id="add" onclick="toggle(this)">
                         Add to the device
                     </label>
                 </th>
@@ -76,14 +76,14 @@ function uncheck(event) {
                 <th scope="col">Attributes</th>
                 <th scope="col">
                     <label>
-                        <input type="checkbox" id="remove_from_device" onclick="toggle(this)">
+                        <input type="checkbox" id="remove" onclick="toggle(this)">
                         Remove
                     </label>
                 </th>
                 <th scope="col">
                     <label>
-                        <input type="checkbox" id="fix_name" onclick="toggle(this)">
-                        Fix the name
+                        <input type="checkbox" id="sync" onclick="toggle(this)">
+                        Sync attributes
                     </label>
                 </th>
             </tr>
@@ -103,7 +103,7 @@ function uncheck(event) {
                     <td {% if not component %}class="table-danger"{% endif %}>
                         {% if not component %}
                         <label>
-                            <input type="checkbox" name="add_to_device" value="{{ component_template.id }}" onclick="uncheck(this)">
+                            <input type="checkbox" name="add" value="{{ component_template.id }}" onclick="uncheck(this)">
                             Add to device
                         </label>
                         {% endif %}
@@ -126,16 +126,16 @@ function uncheck(event) {
                     <td {% if not component_template %}class="table-success"{% endif %}>
                         {% if not component_template %}
                         <label>
-                            <input type="checkbox" name="remove_from_device" value="{{ component.id }}" onclick="uncheck(this)">
+                            <input type="checkbox" name="remove" value="{{ component.id }}" onclick="uncheck(this)">
                             Remove
                         </label>
                         {% endif %}
                     </td>
                     <td {% if not component_template %}class="table-success"{% endif %}>
-                        {% if component_template and component_template.name != component.name %}
+                        {% if component_template and component_template != component %}
                         <label>
-                            <input type="checkbox" name="fix_name" value="{{ component.id }}" onclick="uncheck(this)">
-                            Fix name
+                            <input type="checkbox" name="sync" value="{{ component.id }}" onclick="uncheck(this)">
+                            Sync attributes
                         </label>
                         {% endif %}
                     </td>

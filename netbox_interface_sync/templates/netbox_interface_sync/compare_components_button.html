@@ -1,9 +1,9 @@
 {% if perms.dcim.change_device %}
 <div class="dropdown">
-    <button id="add-device-components" type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+    <button id="device-type-sync" type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
         Device type sync
     </button>
-    <ul class="dropdown-menu" aria-labeled-by="add-device-components">
+    <ul class="dropdown-menu" aria-labeled-by="device-type-sync">
         {% if perms.dcim.add_consoleport %}
             <li>
                 <a class="dropdown-item" href="{% url 'plugins:netbox_interface_sync:consoleport_comparison' device_id=device.id %}">
@@ -39,13 +39,13 @@
                 </a>
             </li>
         {% endif %}
-        {% if perms.dcim.add_frontport %}
-            <li>
-                <a class="dropdown-item" href="{% url 'plugins:netbox_interface_sync:frontport_comparison' device_id=device.id %}">
-                    Front Ports
-                </a>
-            </li>
-        {% endif %}
+{#        {% if perms.dcim.add_frontport %}#}
+{#            <li>#}
+{#                <a class="dropdown-item" href="{% url 'plugins:netbox_interface_sync:frontport_comparison' device_id=device.id %}">#}
+{#                    Front Ports#}
+{#                </a>#}
+{#            </li>#}
+{#        {% endif %}#}
         {% if perms.dcim.add_rearport %}
             <li>
                 <a class="dropdown-item" href="{% url 'plugins:netbox_interface_sync:rearport_comparison' device_id=device.id %}">
